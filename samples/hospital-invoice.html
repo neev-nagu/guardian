@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html><head><style>
+  body { font-family: 'Courier New', monospace; background: white; color: #111; padding: 40px; max-width: 600px; margin: 0 auto; }
+  h1 { text-align: center; font-size: 22px; border-bottom: 2px solid #111; padding-bottom: 10px; }
+  .info { margin: 20px 0; font-size: 14px; line-height: 1.8; }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+  th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid #ccc; font-size: 13px; }
+  th { background: #f5f5f5; font-weight: bold; }
+  td.amount { text-align: right; font-weight: bold; }
+  .total-row td { border-top: 2px solid #111; font-size: 15px; font-weight: bold; }
+  .footer { margin-top: 30px; font-size: 11px; color: #666; text-align: center; }
+</style></head><body>
+  <h1>SAINT MERCY GENERAL HOSPITAL</h1>
+  <div class="info">
+    <strong>Patient:</strong> John A. Smith<br>
+    <strong>Account #:</strong> SMH-2024-88312<br>
+    <strong>Date of Service:</strong> 02/15/2024<br>
+    <strong>Invoice #:</strong> INV-2024-0291<br>
+    <strong>Insurance:</strong> BlueCross PPO
+  </div>
+  <table>
+    <thead>
+      <tr><th>Service Description</th><th>Code</th><th style="text-align:right">Amount</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Emergency Room Visit</td><td>99285</td><td class="amount">$1,250.00</td></tr>
+      <tr><td>MRI Scan - Brain w/o Contrast</td><td>70553</td><td class="amount">$860.00</td></tr>
+      <tr><td>MRI Scan - Brain w/o Contrast</td><td>70553</td><td class="amount">$860.00</td></tr>
+      <tr><td>Blood Panel - Comprehensive</td><td>80053</td><td class="amount">$385.00</td></tr>
+      <tr><td>IV Fluid Administration</td><td>96360</td><td class="amount">$275.00</td></tr>
+      <tr><td>Facility Fee</td><td>G0463</td><td class="amount">$450.00</td></tr>
+      <tr><td>Processing & Handling Fee</td><td>N/A</td><td class="amount">$89.00</td></tr>
+      <tr><td>After-hours Surcharge</td><td>N/A</td><td class="amount">$175.00</td></tr>
+      <tr><td>Medical Supplies</td><td>A4253</td><td class="amount">$124.00</td></tr>
+      <tr class="total-row"><td colspan="2">TOTAL DUE</td><td class="amount">$4,468.00</td></tr>
+    </tbody>
+  </table>
+  <div class="footer">
+    Payment due within 30 days. Contact billing@saintmercy.com for questions.<br>
+    Saint Mercy General Hospital | 1200 Medical Pkwy, Austin TX 78701
+  </div>
+</body></html>
