@@ -12,7 +12,11 @@ import { mkdirSync } from 'fs';
 import documentRoutes from './routes/documents.js';
 import analysisRoutes from './routes/analysis.js';
 import negotiationRoutes from './routes/negotiation.js';
+import respondRoutes from './routes/respond.js';
 import financialRoutes from './routes/financialStatements.js';
+import insightsRoutes from './routes/insights.js';
+import authRoutes from './routes/auth.js';
+import { requireAuth } from './middleware/auth.js';
 import db from './db/database.js';
 
 const app = express();
@@ -24,14 +28,21 @@ mkdirSync(join(__dirname, 'uploads'), { recursive: true });
 app.use(cors());
 app.use(express.json());
 
-// Routes
-app.use('/api/documents', documentRoutes);
-app.use('/api/analysis', analysisRoutes);
-app.use('/api/negotiation', negotiationRoutes);
-app.use('/api/financial', financialRoutes);
+// Public auth routes
+app.use('/api/auth', authRoutes);
 
-// Dashboard savings endpoint
-app.get('/api/dashboard/savings', (req, res) => {
+// Public Terac expert response endpoints (no auth — experts click a link)
+app.use('/api/terac', respondRoutes);
+
+// Protected API routes
+app.use('/api/documents', requireAuth, documentRoutes);
+app.use('/api/analysis', requireAuth, analysisRoutes);
+app.use('/api/negotiation', requireAuth, negotiationRoutes);
+app.use('/api/financial', requireAuth, financialRoutes);
+app.use('/api/insights', requireAuth, insightsRoutes);
+
+// Dashboard savings endpoint (protected)
+app.get('/api/dashboard/savings', requireAuth, (_req, res) => {
   const resolved = db.prepare('SELECT COALESCE(SUM(amount_saved), 0) as total FROM savings').get();
   const estimated = db.prepare('SELECT COALESCE(SUM(estimated_savings), 0) as total FROM fraud_flags').get();
   res.json({
@@ -41,5 +52,5 @@ app.get('/api/dashboard/savings', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Guardian server running on http://localhost:${PORT}`);
+  console.log(`Papaya server running on http://localhost:${PORT}`);
 });

@@ -2,7 +2,6 @@ import { CheckCircle, XCircle, AlertCircle, ChevronDown, ChevronUp, BarChart2 } 
 import { useState } from 'react';
 
 const CHECK_LABELS = {
-  benford_law: "Benford's Law",
   math_totals: 'Math / Totals',
   duplicate_line_items: 'Duplicate Items',
   round_numbers: 'Round Numbers',
@@ -10,43 +9,12 @@ const CHECK_LABELS = {
   vendor_anomaly: 'Vendor Names',
 };
 
-// Checks to exclude from display
-const EXCLUDED_CHECKS = new Set(['late_night_submission']);
+const EXCLUDED_CHECKS = new Set(['late_night_submission', 'benford_law']);
 
 function SeverityIcon({ severity, passed }) {
   if (passed) return <CheckCircle size={16} className="rule-icon rule-icon--pass" />;
   if (severity === 'high') return <XCircle size={16} className="rule-icon rule-icon--high" />;
   return <AlertCircle size={16} className="rule-icon rule-icon--warn" />;
-}
-
-function BenfordChart({ distData, expectedData }) {
-  if (!distData || Object.keys(distData).length === 0) return null;
-  const digits = ['1','2','3','4','5','6','7','8','9'];
-  const maxPct = 35;
-
-  return (
-    <div className="benford-chart">
-      <div className="benford-legend">
-        <span className="benford-legend-obs">Observed</span>
-        <span className="benford-legend-exp">Expected (Benford's)</span>
-      </div>
-      <div className="benford-bars">
-        {digits.map(d => {
-          const obs = distData[d]?.observed_pct || 0;
-          const exp = expectedData?.[d] || 0;
-          return (
-            <div key={d} className="benford-bar-group">
-              <div className="benford-bar-pair">
-                <div className="benford-bar benford-bar--obs" style={{ height: `${(obs / maxPct) * 80}px` }} title={`${obs}%`} />
-                <div className="benford-bar benford-bar--exp" style={{ height: `${(exp / maxPct) * 80}px` }} title={`${exp}%`} />
-              </div>
-              <span className="benford-digit">{d}</span>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
 }
 
 export default function RuleChecksPanel({ ruleChecks }) {
@@ -113,13 +81,6 @@ export default function RuleChecksPanel({ ruleChecks }) {
                   <div className="rule-check-details">
                     <p>{check.details}</p>
 
-                    {type === 'benford_law' && extra.leading_digit_dist && (
-                      <BenfordChart
-                        distData={extra.leading_digit_dist}
-                        expectedData={extra.expected_dist}
-                      />
-                    )}
-
                     {type === 'math_totals' && (
                       <div className="rule-math-detail">
                         {extra.subtotal != null && (
@@ -148,7 +109,7 @@ export default function RuleChecksPanel({ ruleChecks }) {
                     {type === 'duplicate_line_items' && extra.duplicates?.length > 0 && (
                       <ul className="rule-dup-list">
                         {extra.duplicates.map((d, j) => (
-                          <li key={j}>"{d.description}" — ${d.amount?.toFixed(2)} (items {d.item1_idx + 1} & {d.item2_idx + 1})</li>
+                          <li key={j}>"{d.description}" for ${d.amount?.toFixed(2)} (items {d.item1_idx + 1} and {d.item2_idx + 1})</li>
                         ))}
                       </ul>
                     )}

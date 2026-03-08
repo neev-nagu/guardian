@@ -110,3 +110,13 @@ CREATE TABLE IF NOT EXISTS terac_submissions (
     created_at TEXT DEFAULT (datetime('now')),
     FOREIGN KEY (terac_opportunity_id) REFERENCES terac_opportunities(id)
 );
+
+CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    email TEXT UNIQUE NOT NULL,
+    name TEXT,
+    avatar TEXT,
+    provider TEXT DEFAULT 'email',
+    password_hash TEXT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

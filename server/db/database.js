@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-const dbPath = process.env.DATABASE_PATH || join(__dirname, '..', 'guardian.db');
+const dbPath = process.env.DATABASE_PATH || join(__dirname, '..', 'papaya.db');
 const db = new Database(dbPath);
 
 db.pragma('journal_mode = WAL');

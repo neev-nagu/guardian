@@ -1,72 +1,89 @@
-import { useState, useEffect, useRef } from 'react';
-import { Users, Clock, CheckCircle, Loader, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
-import { api } from '../../api/client';
+import { useState, useEffect, useRef } from 'react'
+import { Users, Clock, CheckCircle, Loader, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react'
+import { api } from '../../api/client'
 
+// human readable labels for each terac status
 const STATUS_LABELS = {
   pending: 'Setting Up',
-  active: 'Active — Experts Working',
+  active: 'Active: Experts Working',
   completed: 'Completed',
   cancelled: 'Cancelled',
-};
+}
 
+// collapsible card showing one expert response
 function SubmissionCard({ submission }) {
-  const [open, setOpen] = useState(false);
-  const data = submission.data || {};
+  const [open, setOpen] = useState(false)
+  const data = submission.data || {}
+
+  // pull out the fields we care about with fallbacks
+  const expertName = data.expertName || submission.participant_id || 'Anonymous'
+  const response = data.response || data.text || JSON.stringify(data, null, 2)
+  const submittedAt = data.submittedAt || submission.created_at
+
   return (
     <div className="terac-submission-card">
       <div className="terac-submission-header" onClick={() => setOpen(o => !o)}>
-        <span className="terac-submission-id">Participant {submission.participant_id || submission.id}</span>
-        <span className="terac-submission-date">{new Date(submission.created_at).toLocaleString()}</span>
+        <span className="terac-submission-id">{expertName}</span>
+        <span className="terac-submission-date">{new Date(submittedAt).toLocaleString()}</span>
         {open ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
       </div>
       {open && (
-        <pre className="terac-submission-json">{JSON.stringify(data, null, 2)}</pre>
+        <div className="terac-submission-body">
+          <p className="terac-submission-response">{response}</p>
+        </div>
       )}
     </div>
-  );
+  )
 }
 
+// shows live status and submissions for a launched opportunity
 function OpportunityStatus({ opportunity, documentId, flagId }) {
-  const [status, setStatus] = useState(opportunity.status);
-  const [submissions, setSubmissions] = useState([]);
-  const [polling, setPolling] = useState(false);
-  const [loadingSubs, setLoadingSubs] = useState(false);
-  const intervalRef = useRef(null);
+  const [status, setStatus] = useState(opportunity.status)
+  const [submissions, setSubmissions] = useState([])
+  const [polling, setPolling] = useState(false)
+  const [loadingSubs, setLoadingSubs] = useState(false)
+  const intervalRef = useRef(null)
 
+  // hit the api to get latest status
   const pollStatus = async () => {
     try {
-      const res = await api.getTeracStatus(opportunity.opportunity_id);
-      setStatus(res.status);
+      const res = await api.getTeracStatus(opportunity.opportunity_id)
+      setStatus(res.status)
+      // auto fetch submissions when active or done
       if (res.status === 'active' || res.status === 'completed') {
-        fetchSubmissions();
+        fetchSubmissions()
       }
     } catch {}
-  };
+  }
 
+  // load all stored submissions from our db
   const fetchSubmissions = async () => {
-    setLoadingSubs(true);
+    setLoadingSubs(true)
     try {
-      const res = await api.getTeracSubmissions(opportunity.opportunity_id);
-      setSubmissions(res.submissions || []);
+      const res = await api.getTeracSubmissions(opportunity.opportunity_id)
+      setSubmissions(res.submissions || [])
     } catch {}
-    setLoadingSubs(false);
-  };
+    setLoadingSubs(false)
+  }
 
+  // on mount always grab submissions and start polling if not terminal
   useEffect(() => {
-    if (status !== 'completed' && status !== 'cancelled') {
-      setPolling(true);
-      intervalRef.current = setInterval(pollStatus, 30000);
-      pollStatus(); // immediate first check
+    fetchSubmissions()
+    if (status !== 'completed' && status !== 'cancelled' && status !== 'failed') {
+      setPolling(true)
+      intervalRef.current = setInterval(pollStatus, 30000)
+      pollStatus()
     }
-    return () => clearInterval(intervalRef.current);
-  }, []);
+    return () => clearInterval(intervalRef.current)
+  }, [])
 
+  // stop polling once we hit a terminal state
   useEffect(() => {
     if (status === 'completed' || status === 'cancelled') {
-      clearInterval(intervalRef.current);
-      setPolling(false);
+      clearInterval(intervalRef.current)
+      setPolling(false)
     }
-  }, [status]);
+  }, [status])
 
   return (
     <div className="terac-opportunity">
@@ -96,11 +113,10 @@ function OpportunityStatus({ opportunity, documentId, flagId }) {
       <div className="terac-submissions-section">
         <div className="terac-submissions-header">
           <strong>Submissions ({submissions.length}/{opportunity.submission_count})</strong>
-          {(status === 'active' || status === 'completed') && (
-            <button className="terac-refresh-btn" onClick={fetchSubmissions} disabled={loadingSubs}>
-              {loadingSubs ? <Loader size={12} className="spinner" /> : <RefreshCw size={12} />} Fetch
-            </button>
-          )}
+          {/* always show fetch so you can pull in local submissions even if status is failed */}
+          <button className="terac-refresh-btn" onClick={fetchSubmissions} disabled={loadingSubs}>
+            {loadingSubs ? <Loader size={12} className="spinner" /> : <RefreshCw size={12} />} Fetch
+          </button>
         </div>
         {submissions.length === 0 ? (
           <p className="terac-no-subs">
@@ -113,15 +129,17 @@ function OpportunityStatus({ opportunity, documentId, flagId }) {
         )}
       </div>
     </div>
-  );
+  )
 }
 
 export default function TeracAdvisor({ flag, documentId }) {
-  const [step, setStep] = useState('form'); // form | submitting | opportunity
-  const [opportunities, setOpportunities] = useState([]);
-  const [activeOpp, setActiveOpp] = useState(null);
-  const [error, setError] = useState(null);
+  // tracks which screen we are on
+  const [step, setStep] = useState('form') // form | submitting | opportunity
+  const [opportunities, setOpportunities] = useState([])
+  const [activeOpp, setActiveOpp] = useState(null)
+  const [error, setError] = useState(null)
 
+  // pre-fill form from the flag if one was passed in
   const [form, setForm] = useState({
     taskDescription: flag
       ? `Review this financial document for the following issue: ${flag.description}. Estimated potential overcharge: $${flag.estimated_savings?.toFixed(2) || '0.00'}.`
@@ -129,25 +147,25 @@ export default function TeracAdvisor({ flag, documentId }) {
     panelDescription: 'Financial analysts, accountants, or billing specialists with experience in expense auditing.',
     timelineHours: 72,
     submissionCount: 3,
-    uiLink: '',
     name: flag ? `Review: ${flag.flag_type || 'Financial Issue'}` : 'Financial Document Review',
-  });
+  })
 
-  // Load existing opportunities for this document
+  // load any previous studies for this document on mount
   useEffect(() => {
-    if (!documentId) return;
+    if (!documentId) return
     api.getTeracOpportunities(documentId)
       .then(opps => {
-        setOpportunities(opps);
-        if (opps.length > 0) setActiveOpp(opps[0]);
+        setOpportunities(opps)
+        if (opps.length > 0) setActiveOpp(opps[0])
       })
-      .catch(() => {});
-  }, [documentId]);
+      .catch(() => {})
+  }, [documentId])
 
+  // create quote then launch the opportunity
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setStep('submitting');
-    setError(null);
+    e.preventDefault()
+    setStep('submitting')
+    setError(null)
     try {
       const result = await api.createTeracOpportunity({
         documentId: documentId || null,
@@ -155,7 +173,8 @@ export default function TeracAdvisor({ flag, documentId }) {
         ...form,
         timelineHours: Number(form.timelineHours),
         submissionCount: Number(form.submissionCount),
-      });
+      })
+      // build the local opp object from the api response
       const newOpp = {
         opportunity_id: result.opportunityId,
         quote_id: result.quoteId,
@@ -164,15 +183,17 @@ export default function TeracAdvisor({ flag, documentId }) {
         total_cost: result.totalCost,
         submission_count: form.submissionCount,
         timeline_hours: form.timelineHours,
-      };
-      setActiveOpp(newOpp);
-      setStep('opportunity');
+        ui_link: result.uiLink,
+      }
+      setActiveOpp(newOpp)
+      setStep('opportunity')
     } catch (err) {
-      setError(err.message);
-      setStep('form');
+      setError(err.message)
+      setStep('form')
     }
-  };
+  }
 
+  // success screen after launch
   if (step === 'opportunity' && activeOpp) {
     return (
       <div className="terac-advisor">
@@ -181,12 +202,30 @@ export default function TeracAdvisor({ flag, documentId }) {
           <h4>Study Launched</h4>
           <p>Experts are being matched to your research task.</p>
         </div>
+        {/* shareable link for experts to submit their response */}
+        {activeOpp.ui_link && (
+          <div className="terac-respond-link">
+            <label>Expert response link</label>
+            <p className="terac-respond-hint">Terac will direct participants here. You can also share it directly.</p>
+            <div className="terac-respond-link-row">
+              <a href={activeOpp.ui_link} target="_blank" rel="noopener noreferrer" className="terac-respond-url">
+                {activeOpp.ui_link}
+              </a>
+              <button
+                className="terac-copy-btn"
+                onClick={() => navigator.clipboard.writeText(activeOpp.ui_link)}
+              >
+                Copy
+              </button>
+            </div>
+          </div>
+        )}
         <OpportunityStatus opportunity={activeOpp} documentId={documentId} flagId={flag?.id} />
         <button className="terac-back-btn" onClick={() => setStep('form')}>
           + Launch Another Study
         </button>
       </div>
-    );
+    )
   }
 
   return (
@@ -197,7 +236,7 @@ export default function TeracAdvisor({ flag, documentId }) {
         <p>Launch a Terac research study and get real expert analysis on this document.</p>
       </div>
 
-      {/* Previous opportunities */}
+      {/* previous studies for this document */}
       {opportunities.length > 0 && step === 'form' && (
         <div className="terac-prev-opps">
           <strong>Previous Studies</strong>
@@ -205,9 +244,9 @@ export default function TeracAdvisor({ flag, documentId }) {
             <button
               key={opp.id}
               className="terac-prev-opp-btn"
-              onClick={() => { setActiveOpp(opp); setStep('opportunity'); }}
+              onClick={() => { setActiveOpp(opp); setStep('opportunity') }}
             >
-              {opp.name} — <span className={`terac-status--${opp.status}`}>{STATUS_LABELS[opp.status] || opp.status}</span>
+              {opp.name} <span className={`terac-status--${opp.status}`}>{STATUS_LABELS[opp.status] || opp.status}</span>
             </button>
           ))}
         </div>
@@ -268,16 +307,6 @@ export default function TeracAdvisor({ flag, documentId }) {
           </div>
         </div>
 
-        <div className="terac-field">
-          <label>UI Link (optional)</label>
-          <input
-            type="url"
-            placeholder="https://your-interface.com/task"
-            value={form.uiLink}
-            onChange={e => setForm(f => ({ ...f, uiLink: e.target.value }))}
-          />
-        </div>
-
         {error && <div className="terac-error">{error}</div>}
 
         <button className="terac-connect-btn" type="submit" disabled={step === 'submitting'}>
@@ -285,5 +314,5 @@ export default function TeracAdvisor({ flag, documentId }) {
         </button>
       </form>
     </div>
-  );
+  )
 }

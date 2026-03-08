@@ -52,15 +52,25 @@ router.get('/:flagId', (req, res) => {
 // Create a Terac opportunity: quote → launch → store
 router.post('/terac/opportunity', async (req, res) => {
   try {
-    const { documentId, flagId, taskDescription, panelDescription, timelineHours, submissionCount, uiLink, name } = req.body;
+    const { documentId, flagId, taskDescription, panelDescription, timelineHours, submissionCount, name } = req.body;
+    const APP_URL = process.env.APP_URL || 'http://localhost:5173';
 
     // Step 1: Get quote
     const quote = await createQuote({ taskDescription, panelDescription, timelineHours, submissionCount });
 
-    // Step 2: Launch opportunity
-    const opportunity = await launchOpportunity(quote.quoteId, name || 'Guardian Research Study');
+    // Step 2: Generate expert response link (before launch so we can pass it to Terac)
+    const tempId = quote.quoteId; // placeholder — will update after launch
+    const opportunity = await launchOpportunity(quote.quoteId, name || 'Papaya Research Study', null);
 
-    // Step 3: Store in DB
+    // Step 3: Build the expert response link from the real opportunity ID
+    const uiLink = `${APP_URL}/respond/${opportunity.opportunityId}`;
+    console.log('\n========================================');
+    console.log('TERAC EXPERT RESPONSE LINK:');
+    console.log(uiLink);
+    console.log('Share this link with experts or let Terac route participants to it.');
+    console.log('========================================\n');
+
+    // Step 4: Store in DB
     const result = db.prepare(`
       INSERT INTO terac_opportunities
         (document_id, flag_id, quote_id, opportunity_id, name, task_description, panel_description,
@@ -71,12 +81,12 @@ router.post('/terac/opportunity', async (req, res) => {
       flagId || null,
       quote.quoteId,
       opportunity.opportunityId,
-      name || 'Guardian Research Study',
+      name || 'Papaya Research Study',
       taskDescription,
       panelDescription,
       timelineHours,
       submissionCount,
-      uiLink || null,
+      uiLink,
       quote.totalCost || null
     );
 
@@ -86,6 +96,7 @@ router.post('/terac/opportunity', async (req, res) => {
       quoteId: quote.quoteId,
       totalCost: quote.totalCost,
       costPerParticipant: quote.costPerParticipant,
+      uiLink,
       status: 'pending',
     });
   } catch (err) {

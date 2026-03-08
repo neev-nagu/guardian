@@ -32,7 +32,7 @@ Important rules:
 - State the desired resolution clearly (refund, credit, price correction)
 - Mention consumer protection rights where relevant
 - Keep it concise but thorough
-- Do NOT include placeholder brackets like [Your Name] — write it as if from "Guardian AI on behalf of the account holder"
+- Do NOT include placeholder brackets like [Your Name] — write it as if from "Papaya AI on behalf of the account holder"
 
 Return ONLY the message text, no JSON wrapper.`;
 

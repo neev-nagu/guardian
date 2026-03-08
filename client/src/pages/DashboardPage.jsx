@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, ChevronRight, AlertTriangle } from 'lucide-react';
 import SummaryPanel from '../components/dashboard/SummaryPanel';
+import RiskHeatmap from '../components/dashboard/RiskHeatmap';
 import { api } from '../api/client';
 
 export default function DashboardPage() {
@@ -17,6 +18,7 @@ export default function DashboardPage() {
     <div className="dashboard-page">
       <h1>Dashboard</h1>
       <SummaryPanel />
+      <RiskHeatmap />
 
       <section className="section">
         <h2>All Documents</h2>

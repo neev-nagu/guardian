@@ -17,11 +17,11 @@ export async function createQuote({ taskDescription, panelDescription, timelineH
   return res.json();
 }
 
-export async function launchOpportunity(quoteId, name) {
+export async function launchOpportunity(quoteId, name, uiLink) {
   const res = await fetch(`${TERAC_BASE}/opportunities`, {
     method: 'POST',
     headers: teracHeaders(),
-    body: JSON.stringify({ quoteId, name }),
+    body: JSON.stringify({ quoteId, name, ...(uiLink ? { uiLink } : {}) }),
   });
   if (!res.ok) throw new Error(`Terac launch failed: ${res.status}`);
   return res.json();

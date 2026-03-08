@@ -326,7 +326,6 @@ def run_all_checks(payload):
     ]
 
     return [
-        benford_analysis(all_amounts),
         math_check(document, line_items),
         duplicate_check(line_items),
         round_number_check(line_items),

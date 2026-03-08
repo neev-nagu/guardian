@@ -7,7 +7,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const router = Router();
 
 function getDbPath() {
-  return process.env.DATABASE_PATH || join(__dirname, '..', 'guardian.db');
+  return process.env.DATABASE_PATH || join(__dirname, '..', 'papaya.db');
 }
 
 // GET /api/financial/statements?year=2024&month=3
